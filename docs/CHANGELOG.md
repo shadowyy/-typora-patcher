@@ -8,6 +8,49 @@
 
 ---
 
+## [1.0.4] - 2026-10-08
+
+### 修复
+- **机器码字段归一化，适配 Typora 1.14.10**
+  - **根因**：机器码是 base64 编码的 JSON，脚本固定读取 `l` / `i` / `v`；而 1.14.10 实际使用的字段是 `{v, l, f, u}`（`f` 为指纹、`u` 为设备 uuid）。在 1.14.10 上 `i` 不存在，注入的伪造授权里 `fingerprint` 会变成字符串 `"undefined"`，本地校验可能判定设备不匹配并吊销授权。
+  - **修复**（`typora_crack.js` 机器码解析处，+16 / -3 行）：
+    1. 解析后统一归一化：`l = l ?? u ?? f ?? ""`、`i = i ?? f ?? u ?? ""`、`v = v ?? ""`，同时保留原始 `u`。
+    2. 控制台新增 `machineCode keys:` 输出，便于诊断实际字段。
+    3. `deviceId` / `fingerprint` 任一为空时给出黄色告警，避免带着空指纹继续注入。
+  - **兼容性核查（1.14.10 / Electron 42.2.0）**：
+    | 检查项 | 结果 |
+    |---|---|
+    | `app.asar` 结构 | 仍为 `launch.dist.js`（`main`）+ `atom.compiled.dist.jsc`，注入点不变 |
+    | 注入后语法 | 拼接真实 `launch.dist.js` 后 `new vm.Script()` 解析通过 |
+    | 顶层标识符冲突 | 无 |
+    | fuse wire | `V1` + 9 位，仅 1 个哨兵，`@electron/fuses` 2.1.3 可正常写入 |
+    | `only_load_app_from_asar` | `1` → 翻转为 `0`，Electron 加载 `resources/app/` |
+    | `embedded_asar_integrity_validation` | `0`，**不会触发 asar 完整性校验** |
+    | 授权链路 | `publicDecrypt` / `SLicense` / `api/client/activate` / `2nd` 均存在 |
+    | Electron 42 API | `protocol.handle` / `net.fetch` / `net.request` 均可用 |
+    | 试用天数来源 | 取注册表 `IDate`，非 `profile.data` 的 `_iD`，刷新策略有效 |
+
+    完整证据与复现方法见 [`docs/COMPATIBILITY.md`](./COMPATIBILITY.md)。
+
+### 变更
+- **文档迁移到 `docs/`**：`TECHNICAL.md`、`CHANGELOG.md` 移入 `docs/`（`git mv`，保留历史），README 保留在仓库根目录作为入口，文件说明表补上 `docs/` 三项。
+
+### 文档
+- `README.md`：已验证版本表新增 1.14.10；补充「激活前关掉自动检查更新」和「机器码字段缺失」两条说明；文件说明表指向 `docs/`。
+- `docs/TECHNICAL.md`：第 5 节补充机器码字段的版本差异表与归一化规则。
+- `docs/COMPATIBILITY.md`：新增，记录各版本适配结论、1.14.10 核查详情、实测验证清单、已知风险与核查方法。
+
+### 改动文件
+| 文件 | 改动 |
+|------|------|
+| `typora_crack.js` | +16 / -3 行 |
+| `README.md` | 已验证版本 + 常见问题 + 文件说明 |
+| `docs/COMPATIBILITY.md` | 新增 |
+| `TECHNICAL.md` → `docs/TECHNICAL.md` | 移动 + 机器码字段说明 |
+| `CHANGELOG.md` → `docs/CHANGELOG.md` | 移动 + 1.0.4 条目 |
+
+---
+
 ## [1.0.3] - 2026-09-10
 
 ### 修复

@@ -680,10 +680,25 @@ const { machineCode, email } = getMachineCodeAndEmail();
 function atob(str) {
     return Buffer.from(str, "base64").toString("utf8");
 }
-const atobMachineCode = JSON.parse(atob(machineCode));
+// 【1.14.10 适配】机器码字段名各版本不一致，直接取 mc.l / mc.i 会在新版上拿到 undefined：
+//   旧版（1.13.x 等）机器码为 {v, l, i}
+//   新版（1.14.10）激活请求体为 {v, l, f, u}，f=指纹、u=设备 uuid
+// 这里统一做回退并归一化成脚本内部统一使用的 l / i / v，避免 fingerprint 变成 "undefined"
+const rawMachineCode = JSON.parse(atob(machineCode));
+const atobMachineCode = {
+    l: rawMachineCode.l ?? rawMachineCode.u ?? rawMachineCode.f ?? "",
+    i: rawMachineCode.i ?? rawMachineCode.f ?? rawMachineCode.u ?? "",
+    v: rawMachineCode.v ?? "",
+    u: rawMachineCode.u ?? ""
+};
+console.log(chalk.blueBright("machineCode keys: " + Object.keys(rawMachineCode).join(", ")));
 console.log(chalk.blueBright("deviceId: " + atobMachineCode.l));
 console.log(chalk.blueBright("fingerprint: " + atobMachineCode.i));
 console.log(chalk.blueBright("version: " + atobMachineCode.v));
+// 指纹拿不到时给出警告：伪造授权里的 fingerprint 会是空值，可能被 Typora 的本地校验判定为设备不匹配
+if (!atobMachineCode.i || !atobMachineCode.l) {
+    console.log(chalk.yellow("⚠️  机器码中未找到 deviceId/fingerprint 字段，激活后可能仍提示试用，请检查上方 keys 输出"));
+}
 const nowDateStr = getNowDateStr();
 const EnableHookDebug = false;
 closeTyporaProcesses();

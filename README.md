@@ -27,14 +27,17 @@ Win+R → 输入 cmd → 回车 → node -v
 
 ### 第二步：安装 Typora
 
-`typora-his/` 提供了两个已验证版本：
+`typora-his/` 提供了以下已验证版本：
 
 | 安装包 | 版本 | 状态 |
 |---|---|---|
 | `typora-setup-x64-1.13.7.exe` | 1.13.7 | ✅ 推荐，长期验证稳定 |
 | `typora-setup-x64-1.14.6.exe` | 1.14.6 | ✅ 已验证，同样可用 |
+| `typora-setup-x64-1.14.10.exe` | 1.14.10 | ✅ 已验证（Electron 42，需 v1.0.4 及以上脚本） |
 
 > 如之前装过 Typora，建议先卸载再装这里的版本。装完打开一次 Typora 再关闭。
+>
+> **激活前请先在 Typora 设置里关掉「自动检查更新」**：Typora 的自动更新会用官方安装包覆盖安装目录，已注入的补丁会被还原。
 
 ### 第三步：运行激活脚本
 
@@ -45,6 +48,17 @@ Win+R → 输入 cmd → 回车 → node -v
 3. **输入邮箱** — 随便填个邮箱格式，如 `abc@123.com`
 
 首次运行会自动安装依赖，等几分钟即可。完成后打开 Typora 即为激活状态。
+
+```powershell
+1. 进入脚本目录
+cd C:\projects\github\-typora-patcher
+2. 初始化 npm（如果还没 node_modules）
+npm init -y
+3. 安装所有依赖
+npm install asar chalk@4 readline-sync iconv-lite @electron/fuses
+4. 运行脚本
+node typora_crack.js
+```
 
 ## 已激活状态
 
@@ -63,7 +77,10 @@ A：右键 start.bat → 编辑，确认路径正确。或直接用命令行运�
 A：用压缩包里的 `node.js/node-v24.18.0-x64.msi` 安装 Node.js，或去 https://nodejs.org/zh-cn 下载。
 
 **Q：激活后过几天又提示"还有 X 天到期"？**
-A：当前 Typora 版本与脚本不兼容。卸载后用 `typora-his/typora-setup-x64-1.13.7.exe` 重装，再重新激活。
+A：当前 Typora 版本与脚本不兼容，或 Typora 自动更新已把安装目录覆盖还原。卸载后用 `typora-his/typora-setup-x64-1.13.7.exe` 重装、关掉自动检查更新，再重新激活。
+
+**Q：运行脚本时控制台打印 `fingerprint: undefined` 或 `⚠️ 机器码中未找到 deviceId/fingerprint 字段`？**
+A：机器码没复制全，或该版本机器码字段名与预期不同。重新打开 Typora →「激活」→「输入序列号」→ 选「离线激活」，完整复制机器码（不要带空格和换行）再运行。上方 `machineCode keys:` 那行会告诉你实际有哪些字段。
 
 **Q：想换一台电脑用？**
 A：解压压缩包，按上面三步走一遍即可。
@@ -76,3 +93,6 @@ A：解压压缩包，按上面三步走一遍即可。
 | `typora_crack.js` | 激活主脚本 |
 | `node.js/` | Node.js 安装包 |
 | `typora-his/` | Typora 安装包（已验证版本） |
+| `docs/TECHNICAL.md` | 技术文档：脚本实现原理 |
+| `docs/COMPATIBILITY.md` | 版本兼容性核查（含 1.14.10 核查详情与实测清单） |
+| `docs/CHANGELOG.md` | 更新日志 |
